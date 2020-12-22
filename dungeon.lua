@@ -4,7 +4,7 @@ dungeon.rows = 6
 dungeon.roomStart = nil
 dungeon.map = {}
 
-function createRoom(pRow, pCol)
+local function createRoom(pRow, pCol)
     local newRoom = {}
 
     newRoom.row = pRow
@@ -20,7 +20,7 @@ function createRoom(pRow, pCol)
     return newRoom
 end
 
-function genDungeon()
+dungeon.genDungeon = function()
     dungeon.map = {}
 
     local row, col
@@ -89,19 +89,11 @@ function genDungeon()
     end
 end
 
-function love.load()
-    genDungeon()
-end
-
-function love.update(dt)
-
-end
-
-function love.draw()
+dungeon.drawDungeonMap =  function(pRoom)
     local x, y
 
-    x = 5
-    y = 5
+    x = 15
+    y = 15
 
     local wCase = 34
     local hCase = 13
@@ -115,7 +107,7 @@ function love.draw()
             if room.isOpen == false then
                 love.graphics.setColor(30/255, 30/255, 30/255)
             else
-                if dungeon.roomStart == room then
+                if pRoom == room then
                     love.graphics.setColor(25/255, 1, 25/255)
                 else
                     love.graphics.setColor(1, 1, 1)
@@ -148,8 +140,4 @@ function love.draw()
 
 end
 
-function love.keypressed(key)
-    if key == "space" or key == " " then
-        genDungeon()
-    end
-end
+return dungeon

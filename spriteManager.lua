@@ -2,6 +2,10 @@ local spriteManager = {}
 
 spriteManager.spritesList = {}
 
+spriteManager.reset = function()
+    spriteManager.spritesList = {}
+end
+
 spriteManager.createSprite = function(pImgName, pImgNb, pX, pY)
 
     sprite = {}
