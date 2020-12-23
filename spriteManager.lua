@@ -8,13 +8,14 @@ end
 
 spriteManager.createSprite = function(pImgName, pImgNb, pX, pY)
 
-    sprite = {}
+    local sprite = {}
     sprite.x = pX
     sprite.y = pY
     sprite.frame = 1
     sprite.vx = 0
     sprite.vy = 0
     sprite.flip = 1
+    sprite.offsetY = 0
     sprite.imgs = {}
 
     local imgNum
@@ -63,7 +64,7 @@ spriteManager.draw = function()
     for n=1,#spriteManager.spritesList do
         local s = spriteManager.spritesList[n]
         local frame = s.imgs[math.floor(s.frame)]
-        love.graphics.draw(frame, s.x, s.y, 0, s.flip, 1, s.l/2, s.h/2)
+        love.graphics.draw(frame, s.x, s.y, 0, s.flip, 1, s.l/2, s.h/2 + s.offsetY)
     end
 end
 

@@ -1,15 +1,18 @@
 io.stdout:setvbuf('no')
 if arg[#arg] == "-debug" then require("mobdebug").start() end
 
+-- Constantes
+TILEWIDTH = 64
+TILEHEIGHT = 64
+
 local spriteManager = require("spriteManager")
+local bulletManager = require("bulletManager")
 
 -- Globales utiles
 local screenWidth
 local screenHeight
 
--- Constantes
-local TILEWIDTH = 64
-local TILEHEIGHT = 64
+local gameState = require("gameState")
 
 -- Le donjon
 local dungeon = require("dungeon")
@@ -20,19 +23,6 @@ local roomBackground = {}
 local currentRoom = {}
 currentRoom.doors = {}
 
-local wallMap = {}
-wallMap[1] =  {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
-wallMap[2] =  {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
-wallMap[3] =  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1}
-wallMap[4] =  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1}
-wallMap[5] =  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1}
-wallMap[6] =  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1}
-wallMap[7] =  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1}
-wallMap[8] =  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1}
-wallMap[9] =  {1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1}
-wallMap[10] = {1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1}
-wallMap[11] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
-wallMap[12] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
 
 function testDoor(pX, pY)
     local n
@@ -61,6 +51,7 @@ function createDoor(pType, pX, pY, pWidth, pHeight)
 end
 
 function loadRoom(pRoom)
+    bulletManager.reset()
 
     currentRoom.doors = {}
 
@@ -90,6 +81,7 @@ function startGame()
 
     samSprite.x = screenWidth/2
     samSprite.y = screenHeight/2
+    samSprite.offsetY = samSprite.h/2 - 6
 
     dungeon.genDungeon()
     loadRoom(dungeon.roomStart)
@@ -114,6 +106,7 @@ function love.update(dt)
     local oldY = samSprite.y
 
     spriteManager.update(dt)
+    bulletManager.update(dt)
 
     if math.abs(samSprite.vx) < 1 and math.abs(samSprite.vy) < 1 then
         samSprite.frame = 1
@@ -135,7 +128,7 @@ function love.update(dt)
     end
 
     local newRoom = nil
-    local doorType = testDoor(samSprite.x, samSprite.y-6 + samSprite.h/2)
+    local doorType = testDoor(samSprite.x, samSprite.y)
     if doorType ~= "" then
         local newX = samSprite.x
         local newY = samSprite.y
@@ -167,14 +160,30 @@ function love.update(dt)
     if newRoom == nil then
         local collisionCol
         local collisionRow
+        local bHorizontal = false
+        local bVertical = false
 
         collisionCol = math.floor(samSprite.x / TILEWIDTH + 1)
-        collisionRow = math.floor((samSprite.y - 6 + samSprite.h /2 )/ TILEHEIGHT + 1)
+        collisionRow = math.floor(oldY / TILEHEIGHT + 1)
 
-        if wallMap[collisionRow][collisionCol] > 0 then
+        if gameState.wallMap[collisionRow][collisionCol] > 0 then
+            bHorizontal = true
+        end
+
+        collisionCol = math.floor(oldX / TILEWIDTH + 1)
+        collisionRow = math.floor(samSprite.y / TILEHEIGHT + 1)
+
+        if gameState.wallMap[collisionRow][collisionCol] > 0 then
+            bVertical = true
+        end
+
+        if bHorizontal then
             samSprite.vx = 0
-            samSprite.vy = 0
             samSprite.x = oldX
+        end
+
+        if bVertical then
+            samSprite.vy = 0
             samSprite.y = oldY
         end
     end
@@ -190,11 +199,33 @@ function love.draw()
 
     dungeon.drawDungeonMap(currentRoom.room)
     spriteManager.draw()
-    love.graphics.circle("fill", samSprite.x, samSprite.y - 6 + samSprite.h /2 , 5)
+    bulletManager.draw()
+    love.graphics.circle("fill", samSprite.x, samSprite.y , 5)
 end
 
 function love.keypressed(key)
     if key == "space" or key == " " then
-    startGame()
+        startGame()
+    end
+end
+
+function love.mousepressed(x, y, button, istouch)
+    if button == 1 then
+        local dx = x - samSprite.x
+        local dy = y - samSprite.y
+
+        if math.abs(dx) > math.abs(dy) then
+            if  dx < 0 then
+                bulletManager.createbullet("sam", samSprite.x, samSprite.y - samSprite.h / 2, -10, 0.6)
+            else
+                bulletManager.createbullet("sam", samSprite.x, samSprite.y - samSprite.h / 2, 10, 0.6)
+            end
+        else
+            if dy < 0 then
+                bulletManager.createbullet("sam", samSprite.x, samSprite.y - samSprite.h / 2, 0, -10)
+            else
+                bulletManager.createbullet("sam", samSprite.x, samSprite.y - samSprite.h / 2, 0, 10)
+            end
+        end
     end
 end
